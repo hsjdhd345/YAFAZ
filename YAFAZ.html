@@ -1,0 +1,1001 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>YAFAZ-SUB</title>
+<style>
+  :root{
+    --primary:#00b87c;
+    --muted:#6b7280;
+    --bg:#f3f6f8;
+    --card:#fff;
+    --danger:#ef4444;
+    --glass: rgba(255,255,255,0.6);
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%;margin:0;background:var(--bg);color:#111}
+  /* container */
+  .app {
+    max-width:420px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+  }
+
+  /* header */
+  header.app-header{
+    background:linear-gradient(90deg,var(--primary),#00d09a);
+    color:#fff;
+    padding:18px 16px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .brand{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    font-weight:700;
+    letter-spacing:0.3px;
+  }
+  .logo {
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  background:linear-gradient(135deg, #00b87c, #00d09a);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 4px 12px rgba(0,0,0,0.2);
+}
+
+  .header-actions { display:flex; gap:10px; align-items:center; }
+
+  /* balance card */
+  .balance-card{
+    margin:14px 14px 6px;
+    background:var(--card);
+    border-radius:12px;
+    padding:16px;
+    box-shadow:0 6px 30px rgba(2,6,23,0.06);
+  }
+  .balance-top{display:flex;justify-content:space-between;align-items:center;}
+  .balance-label{color:var(--muted);font-size:13px}
+  .balance-amt{font-size:28px;margin-top:8px;font-weight:700;color:#111}
+
+  /* quick actions grid */
+  .actions{
+    display:grid;
+    grid-template-columns:repeat(3,1fr);
+    gap:10px;
+    padding:12px 14px;
+  }
+  .tile{
+    background:var(--card);
+    border-radius:12px;
+    padding:12px;
+    text-align:center;
+    font-weight:600;
+    box-shadow:0 4px 12px rgba(2,6,23,0.04);
+    cursor:pointer;
+    user-select:none;
+  }
+  .tile:active{transform:translateY(1px)}
+
+  /* main content area */
+  main{flex:1;padding:0 0 80px;}
+  .section{margin:12px 14px}
+
+  /* history list */
+  .history-list{display:flex;flex-direction:column;gap:10px}
+  .txn{
+    background:var(--card);
+    padding:12px;border-radius:10px;
+    display:flex;justify-content:space-between;align-items:center;
+    box-shadow:0 4px 10px rgba(2,6,23,0.04);
+  }
+  .txn .left{display:flex;flex-direction:column}
+  .txn .type{font-weight:700}
+  .txn .meta{font-size:12px;color:var(--muted)}
+  .txn .amount{font-weight:800}
+
+  /* footer notice */
+  footer.notice{
+    padding:10px 14px;
+    font-size:12px;color:var(--muted);text-align:center;
+  }
+
+  /* modal */
+  .modal-backdrop{
+    position:fixed;inset:0;background:rgba(2,6,23,0.45);display:none;align-items:center;justify-content:center;padding:20px;z-index:50;
+  }
+  .modal{
+    width:100%;max-width:420px;background:var(--card);border-radius:12px;padding:16px;
+    box-shadow:0 20px 50px rgba(2,6,23,0.4);
+  }
+  .modal h3{margin:0 0 8px}
+  .form-row{margin:8px 0;display:flex;flex-direction:column;gap:6px}
+  input[type="text"], input[type="number"], select {
+    padding:10px;border-radius:8px;border:1px solid #e6edf0;font-size:15px;
+  }
+  .row {display:flex;gap:8px}
+  .btn{
+    padding:10px 12px;border-radius:10px;border:0;font-weight:700;cursor:pointer;
+  }
+  .btn.primary{background:var(--primary);color:#fff}
+  .btn.ghost{background:transparent;border:1px solid #e6edf0}
+  .btn.danger{background:var(--danger);color:#fff}
+
+  /* small toast */
+  .toast {
+    position:fixed;left:50%;transform:translateX(-50%);bottom:18px;background:#111;color:#fff;padding:10px 14px;border-radius:10px;display:none;z-index:60;
+  }
+
+  /* responsive tweaks */
+  @media(min-width:600px){
+    .app{box-shadow:0 20px 80px rgba(2,6,23,0.07);border-radius:14px;margin-top:20px}
+  }
+  /* Receipt styling for modal & print */
+.receipt {
+  font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+  max-width:380px;
+  margin:0 auto;
+  color:#111;
+}
+.receipt .header {
+  display:flex;
+  gap:12px;
+  align-items:center;
+  margin-bottom:8px;
+}
+.receipt .badge {
+  width:56px;
+  height:56px;
+  border-radius:10px;
+  background:linear-gradient(135deg,#00b87c,#00d09a);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 6px 18px rgba(2,6,23,0.08);
+}
+.receipt h2 {
+  margin:0;
+  font-size:16px;
+  letter-spacing:0.2px;
+}
+.receipt .sub { font-size:12px; color:var(--muted); }
+.receipt .hr { height:1px; background:#f1f4f6; margin:12px 0; border-radius:2px; }
+.receipt .grid { display:flex; justify-content:space-between; gap:12px; font-size:14px; margin:6px 0; }
+.receipt .small { font-size:12px; color:var(--muted); }
+.receipt .amount { font-weight:800; font-size:18px; margin-top:6px; }
+.receipt .meta { font-size:12px; color:var(--muted); margin-top:8px; }
+.receipt .receipt-foot { text-align:center; font-size:12px; color:var(--muted); margin-top:10px; }
+.receipt .print-hint { font-size:11px; color:var(--muted); margin-top:6px; }
+
+/* make rows clickable in history */
+.history-list .txn { cursor:pointer; transition:transform .06s ease; }
+.history-list .txn:active{ transform: translateY(1px); }
+
+</style>
+</head>
+<body>
+  <div class="app" id="app">
+
+    <header class="app-header">
+      <div class="brand">
+        <div class="logo">
+  <svg viewBox="0 0 64 64" width="28" height="28" xmlns="http://www.w3.org/2000/svg">
+    <path d="M12 8 L32 32 L52 8 L44 8 L32 24 L20 8 Z" fill="white"/>
+    <rect x="28" y="28" width="8" height="28" rx="2" fill="white"/>
+  </svg>
+</div>
+
+        <div>
+          <div>YAFAZ SUB</div>
+          <div style="font-size:12px;opacity:0.95">AT cheap price</div>
+        </div>
+      </div>
+      <div class="header-actions">
+        <div id="userGreeting" style="font-weight:700"></div>
+        <button class="btn ghost" id="openSettingsBtn" title="Settings">⚙</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="balance-card" id="balanceCard">
+        <div class="balance-top">
+          <div>
+            <div class="balance-label">Available Balance</div>
+            <div class="balance-amt" id="balanceAmount">₦0.00</div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:12px;color:var(--muted)">Customer ID</div>
+            <div style="font-weight:700" id="customerId">—</div>
+          </div>
+        </div>
+      </section>
+
+      <section class="actions" aria-label="Quick actions">
+        <div class="tile" data-action="send"><span>💸</span>Send Money</div>
+        <div class="tile" data-action="airtime"><span>📱</span>Buy Airtime</div>
+        <div class="tile" data-action="data"><span>🌐</span>Buy Data</div>
+        <div class="tile" data-action="bills"><span>💡</span>Pay Bills</div>
+        <div class="tile" data-action="fund">Fund Wallet<span>➕</span></div>
+        <div class="tile" data-action="history"><span>📜</span>History</div>
+        <div class="tile" data-action="help">Help</div>
+      </section>
+
+      <section class="section">
+        <h4 style="margin:0 0 8px">Recent Transactions</h4>
+        <div class="history-list" id="historyList">
+          <!-- txn items injected here -->
+        </div>
+      </section>
+
+      <section style="padding:0 14px 40px">
+        <div style="background:linear-gradient(90deg,#fff,#fbfffb);padding:12px;border-radius:12px;box-shadow:0 6px 20px rgba(2,6,23,0.03);">
+          <strong style="display:block">Disclaimer</strong>
+          <div style="font-size:13px;color:var(--muted)">
+            We ensure all your money are kept safe. 
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="notice">
+      <p>&copy; 2025 My Website</p>
+      <p>All right reserved</p>
+      <a href="https://www.youtube.com/@yusufbashir-j8k?sub_confirmation=1"><img src="play.png"  width="24"></a>
+      <a href="https://wa.me/2348068581625
+"><img src="social.png" width="24"></a>
+      <a href="https://www.tiktok.com/@yusufbashir1020?_t=ZS-8zse94Q2AZW&_r=1"><img src="tik-tok.png" width="24"></a>
+    </footer>
+  </div>
+
+  <!-- Modal markup (single modal reused for different actions) -->
+  <div class="modal-backdrop" id="modalBackdrop">
+    <div class="modal" id="modal">
+      <h3 id="modalTitle">Modal</h3>
+      <div id="modalBody">
+        <!-- dynamic content -->
+      </div>
+      <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
+        <button class="btn ghost" id="modalCancel">Cancel</button>
+        <button class="btn primary" id="modalSubmit">Continue</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast">Saved</div>
+
+<script>
+(function(){
+  // -------------------------
+  // Utilities & storage keys
+  // -------------------------
+  const LS_KEY = 'yafaz_demo_v1';
+  const $ = (sel) => document.querySelector(sel);
+  const $all = (sel) => document.querySelectorAll(sel);
+  const fmt = (n) => {
+    // format as Naira
+    return '₦' + Number(n).toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:2});
+  }
+  function uid(prefix='u'){ return prefix + Math.random().toString(36).slice(2,9); }
+
+  // -------------------------
+  // Default data init
+  // -------------------------
+  function defaultState(){
+    return {
+      user: { name: 'Guest', id: uid('C') },
+      balance: 50000.00,
+      txns: [
+        // sample txns
+        { id: uid('t'), type:'credit', title:'Initial Top-up', amount:50000.00, time: Date.now()-3600*1000*24*3, note:'Welcome balance' }
+      ]
+    };
+  }
+
+  function loadState(){
+    try{
+      const raw = localStorage.getItem(LS_KEY);
+      if(!raw) return defaultState();
+      const parsed = JSON.parse(raw);
+      // mild schema check
+      if(!parsed.user || typeof parsed.balance !== 'number') return defaultState();
+      return parsed;
+    }catch(e){ return defaultState(); }
+  }
+  function saveState(s){ localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+
+  let state = loadState();
+
+  // -------------------------
+  // View updates
+  // -------------------------
+  const balanceEl = $('#balanceAmount');
+  const historyEl = $('#historyList');
+  const userGreeting = $('#userGreeting');
+  const customerId = $('#customerId');
+
+  function renderBalance(){
+    balanceEl.textContent = fmt(state.balance);
+    customerId.textContent = state.user.id;
+    userGreeting.textContent = state.user.name;
+  }
+
+  function renderHistory(limit=7){
+    historyEl.innerHTML = '';
+    const sorted = (state.txns || []).slice().sort((a,b)=>b.time - a.time);
+    (sorted.slice(0,limit)).forEach(tx=>{
+      const el = document.createElement('div');
+      el.className = 'txn';
+      el.innerHTML = `
+        <div class="left">
+          <div class="type">${tx.type === 'debit' ? '− '+tx.title : '+ '+tx.title}</div>
+          <div class="meta">${new Date(tx.time).toLocaleString()} ${tx.note ? '• '+tx.note : ''}</div>
+        </div>
+        <div class="amount" style="color:${tx.type === 'debit' ? 'var(--danger)' : 'var(--primary)'}">${fmt(tx.amount)}</div>
+      `;
+      historyEl.appendChild(el);
+    });
+    if((state.txns||[]).length===0){
+      historyEl.innerHTML = '<div style="color:var(--muted);padding:10px;background:var(--card);border-radius:8px">No transactions yet.</div>';
+    }
+  }
+
+  function showToast(text='Saved'){
+    const t = $('#toast');
+    t.textContent = text;
+    t.style.display = 'block';
+    setTimeout(()=> t.style.display = 'none', 2000);
+  }
+
+  // -------------------------
+  // Transaction helpers
+  // -------------------------
+
+  function adjustBalance(delta){
+    state.balance = Math.round((Number(state.balance) + Number(delta)) * 100) / 100;
+    saveState(state);
+    renderBalance();
+  }
+   function addTxn({type='debit', title='Txn', amount=0, note=''}){
+  const txn = {
+    id: uid('t'),
+    type,
+    title,
+    amount: Number(amount),
+    time: Date.now(),
+    note,
+    ref: 'TXN' + Math.floor(Math.random()*1e8).toString().padStart(8,'0'),
+    afterBalance: state.balance // snapshot of balance after this txn
+  };
+  state.txns = state.txns || [];
+  state.txns.push(txn);
+  saveState(state);
+  renderHistory(10);
+}
+
+  // -------------------------
+  // Receipt helper functions (single copy)
+  // -------------------------
+
+function printReceiptHTML(innerHtml){
+  const styles = `
+    <style>
+      body{font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:20px;color:#111}
+      .receipt{max-width:480px;margin:0 auto}
+      .badge{width:56px;height:56px;border-radius:10px;background:linear-gradient(135deg,#00b87c,#00d09a);display:flex;align-items:center;justify-content:center}
+      h2{margin:0 0 4px;font-size:18px}
+      .sub{font-size:12px;color:#6b7280}
+      .hr{height:1px;background:#f1f4f6;margin:12px 0;border-radius:2px}
+      .grid{display:flex;justify-content:space-between}
+      .small{font-size:12px;color:#6b7280}
+      .amount{font-weight:800;font-size:18px}
+      .meta{font-size:12px;color:#6b7280;margin-top:8px}
+      .receipt-foot{text-align:center;font-size:12px;color:#6b7280;margin-top:10px}
+    </style>
+  `;
+  const html = `<!doctype html><html><head><meta charset="utf-8"><title>Receipt</title>${styles}</head><body><div class="receipt">${innerHtml}</div></body></html>`;
+  const w = window.open('', '_blank', 'noopener,noreferrer');
+  if(!w){ alert('Unable to open print window. Please allow popups for this site.'); return; }
+  w.document.open();
+  w.document.write(html);
+  w.document.close();
+  setTimeout(()=> { w.print(); }, 300);
+}
+
+function showReceipt(tx){
+  const r = document.createElement('div');
+  r.className = 'receipt';
+  const logoSvg = `<svg viewBox="0 0 64 64" width="36" height="36" xmlns="http://www.w3.org/2000/svg"><path d="M12 8 L32 32 L52 8 L44 8 L32 24 L20 8 Z" fill="white"/><rect x="28" y="28" width="8" height="28" rx="2" fill="white"/></svg>`;
+  const amtStr = fmt(tx.amount);
+  const typeLabel = tx.type === 'debit' ? 'Debit' : 'Credit';
+  const ref = tx.ref || ('REF' + Math.random().toString(36).slice(2,9).toUpperCase());
+  const date = new Date(tx.time || Date.now()).toLocaleString();
+
+  r.innerHTML = `
+    <div class="header">
+      <div class="badge">${logoSvg}</div>
+      <div>
+        <h2>yafaz</h2>
+        <div class="sub">Demo wallet — Receipt</div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div class="grid">
+      <div>
+        <div class="small">Description</div>
+        <div style="font-weight:700;margin-top:4px">${escapeHtml(tx.title)}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="small">Amount</div>
+        <div class="amount" style="color:${tx.type==='debit' ? 'var(--danger)' : 'var(--primary)'}">${tx.type==='debit' ? '− ' : '+ '}${amtStr}</div>
+      </div>
+    </div>
+
+    <div class="grid">
+      <div>
+        <div class="small">Type</div>
+        <div style="font-weight:700;margin-top:4px">${typeLabel}</div>
+      </div>
+      <div style="text-align:right">
+        <div class="small">Reference</div>
+        <div style="font-weight:700;margin-top:4px">${ref}</div>
+      </div>
+    </div>
+
+    <div class="hr"></div>
+
+    <div>
+      <div class="small">Note</div>
+      <div style="margin-top:6px">${escapeHtml(tx.note || '-')}</div>
+    </div>
+
+    <div class="meta">
+      <div style="margin-top:8px"><span class="small">Customer:</span> ${escapeHtml(state.user.name)} • <span class="small">ID:</span> ${escapeHtml(state.user.id)}</div>
+      <div class="small">Date: ${date}</div>
+    </div>
+
+    <div class="receipt-foot">
+      Thank you for using yafaz — Demo wallet<br>
+      <div class="print-hint">Tap Print to open a printer-friendly receipt.</div>
+    </div>
+  `;
+
+  openModal({title:'Receipt', contentEl:r, submitText:'Print'}).then(res=>{
+    if(res !== 'submit') return;
+    printReceiptHTML(r.outerHTML);
+  });
+}
+
+  // -------------------------
+  // Modal system
+  // -------------------------
+  const modalBackdrop = $('#modalBackdrop');
+  const modal = $('#modal');
+  const modalTitle = $('#modalTitle');
+  const modalBody = $('#modalBody');
+  const modalCancel = $('#modalCancel');
+  const modalSubmit = $('#modalSubmit');
+
+  let modalResolve = null;
+  modalCancel.addEventListener('click', closeModal);
+  modalBackdrop.addEventListener('click', (e)=>{ if(e.target===modalBackdrop) closeModal(); });
+
+  function openModal({title='Modal', contentEl=null, submitText='Continue'}){
+    modalTitle.textContent = title;
+    modalBody.innerHTML = '';
+    if(contentEl) modalBody.appendChild(contentEl);
+    modalSubmit.textContent = submitText;
+    modalBackdrop.style.display = 'flex';
+    return new Promise((res)=>{
+      modalResolve = res;
+    });
+  }
+  function closeModal(result=false){
+    modalBackdrop.style.display = 'none';
+    if(modalResolve) modalResolve(result);
+    modalResolve = null;
+  }
+  modalSubmit.addEventListener('click', ()=>{
+    if(modalResolve) modalResolve('submit');
+    closeModal('submit');
+  });
+
+  // -------------------------
+  // Action handlers
+  // -------------------------
+  function handleSend(){
+  const form = document.createElement('div');
+  form.innerHTML = `
+    <div class="form-row">
+      <label>Recipient Name</label>
+      <input type="text" id="send_recipient" placeholder="e.g. Ahmad">
+    </div>
+    <div class="form-row">
+      <label>Bank</label>
+      <select id="send_bank">
+        <option value="">-- Select Bank --</option>
+        <option>Access Bank</option>
+        <option>Citibank Nigeria</option>
+        <option>Ecobank Nigeria</option>
+        <option>Fidelity Bank</option>
+        <option>First Bank of Nigeria</option>
+        <option>First City Monument Bank (FCMB)</option>
+        <option>Globus Bank</option>
+        <option>Guaranty Trust Bank (GTBank)</option>
+        <option>Heritage Bank</option>
+        <option>Keystone Bank</option>
+        <option>Polaris Bank</option>
+        <option>Providus Bank</option>
+        <option>Stanbic IBTC Bank</option>
+        <option>Standard Chartered Bank</option>
+        <option>Sterling Bank</option>
+        <option>Titan Trust Bank</option>
+        <option>Union Bank of Nigeria</option>
+        <option>United Bank for Africa (UBA)</option>
+        <option>Unity Bank</option>
+        <option>Wema Bank</option>
+        <option>Zenith Bank</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Account / Phone</label>
+      <input type="text" id="send_account" placeholder="080xxxx or acct no">
+    </div>
+    <div class="form-row">
+      <label>Amount (NGN)</label>
+      <input type="number" id="send_amount" placeholder="1000" min="1">
+    </div>
+    <div class="form-row">
+      <label>Note (optional)</label>
+      <input type="text" id="send_note" placeholder="For lunch">
+    </div>
+  `;
+  openModal({title:'Send Money', contentEl:form, submitText:'Send'}).then(async (res)=>{
+    if(res !== 'submit') return;
+    const recipient = form.querySelector('#send_recipient').value.trim() || 'Unknown';
+    const bank = form.querySelector('#send_bank').value;
+    const acct = form.querySelector('#send_account').value.trim();
+    const amt = Number(form.querySelector('#send_amount').value || 0);
+    const note = form.querySelector('#send_note').value.trim();
+
+    if(!bank){ alert('Select a bank'); return; }
+    if(!acct){ alert('Enter recipient account or phone'); return; }
+    if(!amt || amt <= 0){ alert('Enter a valid amount'); return; }
+    if(amt > state.balance){ alert('Insufficient balance'); return; }
+
+    adjustBalance(-amt); addTxn({type:'debit', title:'Sent: '+recipient, amount:amt, note: acct + (note? ' • '+note : '')}); showToast('Sent ' + fmt(amt)); });
+}
+
+  function handleAirtime(){
+    const form = document.createElement('div');
+    form.innerHTML = `
+      <div class="form-row">
+        <label>Phone Number</label>
+        <input type="text" id="air_phone" placeholder="080xxxx">
+      </div>
+      <div class="form-row">
+        <label>Amount (NGN)</label>
+        <input type="number" id="air_amount" placeholder="500" min="50">
+      </div>
+      <div class="form-row">
+        <label>Network</label>
+        <select id="air_net">
+          <option value="MTN">MTN</option>
+          <option value="GLO">GLO</option>
+          <option value="Airtel">Airtel</option>
+          <option value="9Mobile">9Mobile</option>
+        </select>
+      </div>
+    `;
+    openModal({title:'Buy Airtime', contentEl:form, submitText:'Buy'}).then(res=>{
+      if(res !== 'submit') return;
+      const phone = form.querySelector('#air_phone').value.trim();
+      const amt = Number(form.querySelector('#air_amount').value || 0);
+      const net = form.querySelector('#air_net').value;
+      if(!phone){ alert('Enter a phone number'); return; }
+      if(!amt || amt <= 0){ alert('Enter a valid amount'); return; }
+      if(amt > state.balance){ alert('Insufficient balance'); return; }
+
+      adjustBalance(-amt);
+      addTxn({type:'debit', title:'Airtime', amount:amt, note: `${net} • ${phone}`});
+      showToast('Airtime bought: ' + fmt(amt));
+    });
+  }
+
+  function handleData(){
+  const form = document.createElement('div');
+  form.innerHTML = `
+    <div class="form-row">
+      <label>Phone Number</label>
+      <input type="text" id="data_phone" placeholder="080xxxx">
+    </div>
+    <div class="form-row">
+      <label>Network</label>
+      <select id="data_net">
+        <option value="MTN">MTN</option>
+        <option value="GLO">GLO</option>
+        <option value="Airtel">Airtel</option>
+        <option value="9Mobile">9Mobile</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Data Plan</label>
+      <select id="data_plan">
+        <option value="500MB / ₦200">500MB / ₦200</option>
+        <option value="1.5GB / ₦500">1.5GB / ₦500</option>
+        <option value="3GB / ₦1000">3GB / ₦1000</option>
+        <option value="10GB / ₦2500">10GB / ₦2500</option>
+      </select>
+    </div>
+  `;
+  openModal({title:'Buy Data', contentEl:form, submitText:'Buy'}).then(res=>{
+    if(res !== 'submit') return;
+    const phone = form.querySelector('#data_phone').value.trim();
+    const net = form.querySelector('#data_net').value;
+    const plan = form.querySelector('#data_plan').value;
+
+    if(!phone){ alert('Enter a phone number'); return; }
+
+    // extract price from plan text
+    const amt = Number(plan.split('₦')[1].replace(/[^0-9]/g,''));
+    if(amt > state.balance){ alert('Insufficient balance'); return; }
+
+    adjustBalance(-amt);
+    addTxn({
+      type:'debit',
+      title:'Data Bundle',
+      amount:amt,
+      note:`${net} • ${phone} • ${plan}`
+    });
+    showToast('Data bought: ' + fmt(amt));
+  });
+}
+
+  function handleBills(){
+    const form = document.createElement('div');
+    form.innerHTML = `
+      <div class="form-row">
+        <label>Bill Type</label>
+        <select id="bill_type">
+          <option value="Electricity">Electricity</option>
+          <option value="Cable TV">Cable TV</option>
+          <option value="Internet">Internet</option>
+          <option value="Water">Water</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Customer Ref</label>
+        <input type="text" id="bill_ref" placeholder="Ref or account">
+      </div>
+      <div class="form-row">
+        <label>Amount (NGN)</label>
+        <input type="number" id="bill_amount" placeholder="2000" min="100">
+      </div>
+    `;
+    openModal({title:'Pay Bills', contentEl:form, submitText:'Pay'}).then(res=>{
+      if(res !== 'submit') return;
+      const type = form.querySelector('#bill_type').value;
+      const ref = form.querySelector('#bill_ref').value.trim();
+      const amt = Number(form.querySelector('#bill_amount').value || 0);
+      if(!ref){ alert('Enter a reference'); return; }
+      if(!amt || amt <= 0){ alert('Enter a valid amount'); return; }
+      if(amt > state.balance){ alert('Insufficient balance'); return; }
+
+      adjustBalance(-amt);
+      addTxn({type:'debit', title:`Bill: ${type}`, amount:amt, note: ref});
+      showToast('Bill paid: ' + fmt(amt));
+    });
+  }
+
+  // -------------------------
+  // Fund wallet (fixed with captcha + dynamic fields)
+  // -------------------------
+  function handleFund() {
+    const form = document.createElement("div");
+    const captchaCode = Math.floor(1000 + Math.random() * 9000); // 4-digit random code
+
+    form.innerHTML = `
+      <div class="form-row">
+        <label>Funding Method</label>
+        <select id="fundMethod">
+          <option value="">-- Select Method --</option>
+          <option value="bank">Bank Transfer</option>
+          <option value="card">Card Payment</option>
+          <option value="ussd">USSD</option>
+        </select>
+      </div>
+      <div class="form-row">
+        <label>Amount (NGN)</label>
+        <input type="number" id="fundAmount" placeholder="5000" min="100">
+      </div>
+      <div id="fundExtra" style="margin-top:10px;"></div>
+      <div class="form-row" style="margin-top:15px;">
+        <label>Security Check</label>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span id="captchaText" style="font-weight:bold;font-size:18px;background:#eee;padding:4px 10px;border-radius:6px;">${captchaCode}</span>
+          <button type="button" id="refreshCaptcha">↻</button>
+        </div>
+        <input type="text" id="captchaInput" placeholder="Enter the code above">
+      </div>
+    `;
+
+    const fundMethodEl = form.querySelector("#fundMethod");
+    const fundExtraEl = form.querySelector("#fundExtra");
+    const captchaTextEl = form.querySelector("#captchaText");
+    const refreshCaptchaBtn = form.querySelector("#refreshCaptcha");
+    let currentCaptcha = captchaCode;
+
+    // Refresh captcha
+    refreshCaptchaBtn.addEventListener("click", () => {
+      currentCaptcha = Math.floor(1000 + Math.random() * 9000);
+      captchaTextEl.textContent = currentCaptcha;
+    });
+
+    // Show extra inputs depending on method selected
+    fundMethodEl.addEventListener("change", () => {
+      const method = fundMethodEl.value;
+      let extraHtml = "";
+
+      if (method === "bank") {
+        extraHtml = `
+          <h4>Enter Bank Transfer Details</h4>
+          <div class="form-row">
+            <label>Bank Name</label>
+            <input type="text" id="bankName" placeholder="e.g. Access Bank">
+          </div>
+          <div class="form-row">
+            <label>Account Number</label>
+            <input type="text" id="accountNumber" maxlength="10" placeholder="e.g. 0123456789">
+          </div>
+          <div class="form-row">
+            <label>Account Holder Name</label>
+            <input type="text" id="accountName" placeholder="Your Full Name">
+          </div>
+        `;
+      } else if (method === "card") {
+        extraHtml = `
+          <h4>Enter Card Details</h4>
+          <div class="form-row">
+            <label>Card Number</label>
+            <input type="text" id="cardNumber" maxlength="19" placeholder="0000 0000 0000 0000">
+          </div>
+          <div class="form-row">
+            <label>Expiry Date</label>
+            <input type="text" id="cardExpiry" placeholder="MM/YY">
+          </div>
+          <div class="form-row">
+            <label>CVV</label>
+            <input type="password" id="cardCVV" maxlength="4" placeholder="123">
+          </div>
+        `;
+      } else if (method === "ussd") {
+        extraHtml = `
+          <h4>Enter USSD Details</h4>
+          <div class="form-row">
+            <label>Phone Number</label>
+            <input type="tel" id="ussdPhone" placeholder="e.g. 08012345678">
+          </div>
+          <p>Dial <b>*123*000*AMOUNT#</b> on your phone to confirm funding.</p>
+        `;
+      }
+
+      fundExtraEl.innerHTML = extraHtml;
+    });
+
+    // Open modal with dynamic form
+    openModal({ title: "Fund Wallet", contentEl: form, submitText: "Submit" }).then((res) => {
+      if (res !== "submit") return;
+
+      const method = form.querySelector("#fundMethod").value;
+      const amt = Number(form.querySelector("#fundAmount").value || 0);
+      const captchaInput = form.querySelector("#captchaInput").value;
+
+      if (!method) {
+        alert("Select a funding method first.");
+        return;
+      }
+
+      if (!amt || amt <= 0) {
+        alert("Enter a valid amount.");
+        return;
+      }
+
+      if (String(captchaInput).trim() !== String(currentCaptcha)) {
+        alert("Captcha does not match. Try again.");
+        return;
+      }
+
+      // Collect details per method
+      let note = "";
+      if (method === "bank") {
+        const bankName = (form.querySelector("#bankName") || {value:''}).value.trim();
+        const accNum = (form.querySelector("#accountNumber") || {value:''}).value.trim();
+        const accName = (form.querySelector("#accountName") || {value:''}).value.trim();
+        if(!bankName || !accNum || !accName){ alert('Fill all bank details'); return; }
+        note = `Bank Transfer from ${accName} (${bankName} - ${accNum})`;
+      } else if (method === "card") {
+        const cardNum = (form.querySelector("#cardNumber") || {value:''}).value.replace(/\s+/g,'');
+        if(!cardNum || cardNum.length < 12){ alert('Enter a valid card number'); return; }
+        note = `Card Payment from card ending ${cardNum.slice(-4)}`;
+      } else if (method === "ussd") {
+        const phone = (form.querySelector("#ussdPhone") || {value:''}).value.trim();
+        if(!phone){ alert('Enter phone number for USSD'); return; }
+        note = `USSD Payment from ${phone}`;
+      }
+
+      // Simulate successful funding
+      adjustBalance(amt);
+      addTxn({ type: "credit", title: "Wallet Funding", amount: amt, note });
+      showToast(`Wallet funded successfully: ${fmt(amt)}`);
+    });
+  }
+
+  // -------------------------
+  // History & other helpers
+  // -------------------------
+  function handleHistory(){
+  const box = document.createElement('div');
+  box.style.maxHeight = '60vh';
+  box.style.overflow = 'auto';
+  const list = document.createElement('div');
+  const sorted = (state.txns||[]).slice().sort((a,b)=>b.time - a.time);
+  if(sorted.length===0){
+    list.innerHTML = '<div style="color:var(--muted)">No transactions yet.</div>';
+  }else{
+    sorted.forEach(tx=>{
+      const el = document.createElement('div');
+      el.style.padding = '10px';
+      el.style.borderBottom = '1px solid #f3f5f7';
+      el.className = 'txn';
+      el.innerHTML = `<div style="display:flex;justify-content:space-between">
+        <div style="font-weight:700">${tx.type==='debit' ? '−' : '+'} ${escapeHtml(tx.title)}</div>
+        <div style="font-weight:800">${fmt(tx.amount)}</div>
+      </div>
+      <div style="font-size:12px;color:var(--muted);margin-top:6px">${new Date(tx.time).toLocaleString()} ${tx.note ? '• '+escapeHtml(tx.note) : ''}</div>`;
+      el.addEventListener('click', ()=> showReceipt(tx));
+      list.appendChild(el);
+    });
+  }
+  box.appendChild(list);
+  openModal({title:'Transaction History', contentEl:box, submitText:'Close'});
+}
+
+  function handleHelp(){
+    const help = document.createElement('div');
+    help.innerHTML = `
+      <p style="margin:0 0 6px;color:var(--muted)">This is a demo. Actions do not contact banks or networks. You can:</p>
+      <ul style="margin:6px 0 0;padding-left:18px;color:var(--muted)">
+        <li>Send simulated money (balance updates locally)</li>
+        <li>Buy airtime and pay bills (simulated)</li>
+        <li>Top up to increase balance</li>
+        <li>Transactions persist in your browser storage</li>
+      </ul>
+    `;
+    openModal({title:'Help & Info', contentEl:help, submitText:'Got it'});
+  }
+
+  // -------------------------
+  // Settings modal
+  // -------------------------
+  const openSettingsBtn = $('#openSettingsBtn');
+  openSettingsBtn.addEventListener('click', ()=>openSettings());
+
+  function openSettings(){
+    const cont = document.createElement('div');
+    cont.innerHTML = `
+      <div class="form-row">
+        <label>Your name</label>
+        <input type="text" id="set_name" value="${escapeHtml(state.user.name)}">
+      </div>
+      <div class="form-row">
+        <label>Customer ID</label>
+        <input type="text" id="set_id" value="${state.user.id}">
+      </div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button class="btn ghost" id="clearData">Reset Demo</button>
+        <button class="btn danger" id="wipeData">Clear All</button>
+      </div>
+    `;
+    openModal({title:'Settings', contentEl:cont, submitText:'Save'}).then(res=>{
+      if(res !== 'submit') return;
+      const newName = cont.querySelector('#set_name').value.trim() || 'Guest';
+      const newId = cont.querySelector('#set_id').value.trim() || state.user.id;
+      state.user.name = newName;
+      state.user.id = newId;
+      saveState(state);
+      renderBalance();
+      showToast('Settings saved');
+    });
+
+    setTimeout(()=>{
+      const cd = document.getElementById('clearData');
+      const wd = document.getElementById('wipeData');
+      if(cd) cd.onclick = ()=> {
+        if(!confirm('Reset demo data to defaults?')) return;
+        state = defaultState();
+        saveState(state);
+        renderBalance(); renderHistory(10);
+        showToast('Demo reset');
+        closeModal();
+      };
+      if(wd) wd.onclick = ()=> {
+        if(!confirm('Clear all demo data from this browser?')) return;
+        localStorage.removeItem(LS_KEY);
+        state = defaultState();
+        renderBalance(); renderHistory(10);
+        showToast('Data cleared');
+        closeModal();
+      };
+    },100);
+  }
+
+  // -------------------------
+  // Small helpers
+  // -------------------------
+  function escapeHtml(s){ return String(s).replace(/[&<>'"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c])); }
+
+  // -------------------------
+  // Wire up tiles
+  // -------------------------
+  document.querySelectorAll('.tile').forEach(t=>{
+    t.addEventListener('click', ()=>{
+      const a = t.dataset.action;
+      if(a==='send') handleSend();
+      else if(a==='airtime') handleAirtime();
+      else if(a==='bills') handleBills();
+      else if(a==='fund') handleFund();
+      else if(a==='history') handleHistory();
+      else if(a==='help') handleHelp();
+      else if(a==='data') handleData();
+    });
+  });
+
+  // -------------------------
+  // Login-like simple prompt (runs once per fresh demo)
+  // -------------------------
+  function ensureUserName(){
+    if(state.user && state.user.name && state.user.name !== 'Guest') return;
+    const el = document.createElement('div');
+    el.innerHTML = `
+      <div class="form-row">
+        <label>Display name</label>
+        <input type="text" id="init_name" placeholder="Your name">
+      </div>
+      <div style="font-size:13px;color:var(--muted);margin-top:6px">This is just for the demo UI.</div>
+    `;
+    openModal({title:'Welcome to yafaz', contentEl:el, submitText:'Start'}).then(res=>{
+      const nameInput = el.querySelector('#init_name');
+      const name = nameInput.value.trim() || 'You';
+      state.user.name = name;
+      saveState(state);
+      renderBalance();
+      showToast('Welcome, ' + name);
+    });
+  }
+
+  // -------------------------
+  // Initial render
+  // -------------------------
+  renderBalance();
+  renderHistory();
+  ensureUserName();
+
+  // expose some for debugging (optional)
+  window.__yafaz = {
+    state, saveState, addTxn, adjustBalance
+  };
+
+})();
+</script>
+</body>
+</html>
