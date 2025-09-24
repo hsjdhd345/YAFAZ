@@ -4,6 +4,8 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 <title>YAFAZ-SUB</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#000000">
 <style>
   :root{
     --primary:#00b87c;
@@ -996,6 +998,13 @@ function showReceipt(tx){
   };
 
 })();
+   // Register service worker
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("service-worker.js")
+        .then(() => console.log("Service Worker registered"))
+        .catch(err => console.log("SW registration failed:", err));
+    }
 </script>
 </body>
 </html>
+
